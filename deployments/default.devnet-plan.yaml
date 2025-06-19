@@ -37,13 +37,6 @@ plan:
             anchor-block-only: true
             clarity-version: 1
         - contract-publish:
-            contract-name: voting-trait
-            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 4290
-            path: contracts/traits/voting-trait.clar
-            anchor-block-only: true
-            clarity-version: 1
-        - contract-publish:
             contract-name: payment-gateway-trait
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
             cost: 3370
@@ -71,6 +64,13 @@ plan:
             path: contracts/traits/ownable-trait.clar
             anchor-block-only: true
             clarity-version: 1
+        - contract-publish:
+            contract-name: voting-trait
+            expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
+            cost: 4290
+            path: contracts/traits/voting-trait.clar
+            anchor-block-only: true
+            clarity-version: 1
       epoch: "2.05"
     - id: 1
       transactions:
@@ -91,7 +91,7 @@ plan:
         - contract-publish:
             contract-name: bde001-proposal-voting
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 114430
+            cost: 57030
             path: contracts/extensions/bde001-proposal-voting.clar
             anchor-block-only: true
             clarity-version: 3
@@ -105,21 +105,21 @@ plan:
         - contract-publish:
             contract-name: bde002-proposal-submission
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 61950
+            cost: 60690
             path: contracts/extensions/bde002-proposal-submission.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
             contract-name: bde003-core-proposals
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 29640
+            cost: 28860
             path: contracts/extensions/bde003-core-proposals.clar
             anchor-block-only: true
             clarity-version: 3
         - contract-publish:
             contract-name: bde004-core-execute
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 36850
+            cost: 36840
             path: contracts/extensions/bde004-core-execute.clar
             anchor-block-only: true
             clarity-version: 3
@@ -140,7 +140,7 @@ plan:
         - contract-publish:
             contract-name: bde021-opinion-polling
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 112050
+            cost: 112130
             path: contracts/extensions/bde021-opinion-polling.clar
             anchor-block-only: true
             clarity-version: 3
@@ -154,7 +154,7 @@ plan:
         - contract-publish:
             contract-name: bdp000-bootstrap
             expected-sender: ST1PQHQKV0RJXZFY1DGX8MNSNYVE3VGZJSRTPGZGM
-            cost: 27690
+            cost: 20790
             path: contracts/proposals/testnet/bdp000-bootstrap.clar
             anchor-block-only: true
             clarity-version: 3

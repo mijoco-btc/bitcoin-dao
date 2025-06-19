@@ -15,7 +15,6 @@
 ;; the vote to carry.
 
 (impl-trait .extension-trait.extension-trait)
-(impl-trait .voting-trait.voting-trait)
 (use-trait proposal-trait .proposal-trait.proposal-trait)
 
 (define-constant err-unauthorised (err u3000))
@@ -27,22 +26,10 @@
 (define-constant err-insufficient-voting-capacity (err u3006))
 (define-constant err-end-burn-height-not-reached (err u3007))
 (define-constant err-not-majority (err u3008))
-(define-constant err-proposal-start-no-reached (err u3009))
-(define-constant err-historical-data (err u3010))
+(define-constant err-exceeds-voting-cap (err u3009))
 
 (define-constant custom-majority-upper u10000)
-
-(define-constant structured-data-prefix 0x534950303138)
-(define-constant message-domain-hash (sha256 (unwrap! (to-consensus-buff?
-	{
-		name: "BigMarket",
-		version: "1.0.0",
-		chain-id: chain-id
-	}
-    ) err-unauthorised)
-))
-
-(define-constant structured-data-header (concat structured-data-prefix message-domain-hash))
+(define-constant vote-cap u140000000000)
 
 (define-map proposals
 	principal
@@ -58,7 +45,7 @@
 		proposer: principal
 	}
 )
-(define-map voter-timestamps {proposal: principal, voter: principal} uint)
+
 (define-map member-total-votes {proposal: principal, voter: principal} uint)
 
 ;; --- Authorisation check
@@ -96,20 +83,15 @@
 )
 
 (define-read-only (get-historical-values (height uint) (who principal))
-  (at-block (unwrap! (get-stacks-block-info? id-header-hash height) none)
-    (let (
-      (account-data (stx-account who)) ;; Fetch the STX account data
-    )
-      (some 
-        {
-          user-balance: (tuple 
-            (unlocked (get unlocked account-data))
-            (locked (get locked account-data))
-          )
-        }
-      )
-    )
-  )
+	(at-block (unwrap! (get-stacks-block-info? id-header-hash height) none)
+		(some 
+			{
+				user-balance: (stx-get-balance who), 
+				voting-cap: vote-cap, 
+				;;voting-cap: (contract-call? 'SP000000000000000000002Q6VF78.pox get-stacking-minimum)
+			}
+		)
+	)
 )
 
 (define-public (vote (amount uint) (for bool) (proposal principal))
@@ -117,14 +99,17 @@
 		(
 			(proposal-data (unwrap! (map-get? proposals proposal) err-unknown-proposal))
 			(new-total-votes (+ (get-current-total-votes proposal tx-sender) amount))
-			(historical-values (unwrap! (get-historical-values (get start-height-stacks proposal-data) tx-sender) err-historical-data))
-  			(total-balance (+ (get unlocked (get user-balance historical-values)) (get locked (get user-balance historical-values))))
+			(historical-values (unwrap! (get-historical-values (get start-height-stacks proposal-data) tx-sender) err-proposal-inactive))
 		)
-		(asserts! (>= burn-block-height (get start-burn-height proposal-data)) err-proposal-start-no-reached)
+		(asserts! (>= burn-block-height (get start-burn-height proposal-data)) err-proposal-inactive)
 		(asserts! (< burn-block-height (get end-burn-height proposal-data)) err-proposal-inactive)
 		(asserts!
-			(<= new-total-votes total-balance) err-insufficient-voting-capacity
+			(<= new-total-votes (get user-balance historical-values))
+			err-insufficient-voting-capacity
 		)
+		(asserts! 
+			(< new-total-votes (get voting-cap historical-values)) 
+			err-exceeds-voting-cap)
 			
 		(map-set member-total-votes {proposal: proposal, voter: tx-sender} new-total-votes)
 		(map-set proposals proposal
@@ -133,127 +118,9 @@
 				(merge proposal-data {votes-against: (+ (get votes-against proposal-data) amount)})
 			)
 		)
-		(print {event: "vote", sip18: false, proposal: proposal, voter: tx-sender, for: for, height: (get start-height-stacks proposal-data), amount: amount})
+		(print {event: "vote", proposal: proposal, voter: tx-sender, for: for, amount: amount})
 		(ok true)
 	)
-)
-
-(define-public (batch-vote (votes (list 50 {message: (tuple 
-                                                (attestation (string-ascii 100))
-                                                (proposal principal) 
-                                                (timestamp uint) 
-                                                (vote bool)
-                                                (voter principal)
-                                                (voting_power uint)), 
-                                   signature: (buff 65)})))
-  (begin
-    (ok (fold fold-vote votes u0))
-  )
-)
-
-(define-private (fold-vote  (input-vote {message: (tuple 
-                                                (attestation (string-ascii 100)) 
-                                                (proposal principal) 
-                                                (timestamp uint) 
-                                                (vote bool)
-                                                (voter principal)
-                                                (voting_power uint)), 
-                                     signature: (buff 65)}) (current uint))
-  (let
-    (
-      (vote-result (process-vote input-vote))
-    )
-    (if (is-ok vote-result)
-        (if (is-eq (unwrap! vote-result u0) u1)
-            (+ current u1)
-            current) 
-        current)
-  )
-)
-
-(define-private (process-vote (input-vote {message: (tuple 
-                                                (attestation (string-ascii 100)) 
-                                                (proposal principal) 
-                                                (timestamp uint) 
-                                                (vote bool)
-                                                (voter principal)
-                                                (voting_power uint)), 
-                                     signature: (buff 65)}))
-  (let
-    (
-      ;; Extract relevant fields from the message
-		(message-data (get message input-vote))
-		(proposal (get proposal message-data))
-		(voter (get voter message-data))
-		(voting_power (get voting_power message-data))
-		(for (get vote message-data))
-		(timestamp (get timestamp message-data))
-		(structured-data-hash (sha256 (unwrap! (to-consensus-buff? message-data) err-unauthorised)))
-		;; Verify the signature
-		(is-valid-sig (verify-signed-structured-data structured-data-hash (get signature input-vote) voter))
-		(last-timestamp (default-to u0 (map-get? voter-timestamps {proposal: proposal, voter: voter})))
-    )
-    (if (and is-valid-sig (> timestamp last-timestamp))
-      (let
-        (
-			;; Proposal details
-			(proposal-data (unwrap! (map-get? proposals proposal) (err u3003)))
-			;; Total votes already cast
-			(new-total-votes (+ (get-current-total-votes proposal voter) voting_power))
-			(historical-values (unwrap! (get-historical-values (get start-height-stacks proposal-data) tx-sender) err-historical-data))
-			(total-balance (+ (get unlocked (get user-balance historical-values)) (get locked (get user-balance historical-values))))
-        )
-        (begin
-			(asserts! (>= burn-block-height (get start-burn-height proposal-data)) err-proposal-start-no-reached)
-			(asserts! (< burn-block-height (get end-burn-height proposal-data)) err-proposal-inactive)
-			(asserts!
-				(<= new-total-votes total-balance) err-insufficient-voting-capacity
-			)
-			(map-set proposals proposal
-				(if for
-					(merge proposal-data {votes-for: (+ (get votes-for proposal-data) voting_power)})
-					(merge proposal-data {votes-against: (+ (get votes-against proposal-data) voting_power)})
-				)
-			)
-			(map-set member-total-votes {proposal: proposal, voter: voter} new-total-votes)
-			(map-set voter-timestamps {proposal: proposal, voter: voter} timestamp)
-			(print {event: "vote", sip18: true,  proposal: proposal, voter: voter, for: for, height: (get start-height-stacks proposal-data), amount: voting_power})
-			(ok u1) ;; Vote processed successfully
-        )
-      )
-	  (begin 
-      	(ok u0) ;; Invalid signature, skip vote
-	  )
-    )
-  )
-)
-
-(define-read-only (verify-signature (hash (buff 32)) (signature (buff 65)) (signer principal))
-	(is-eq (principal-of? (unwrap! (secp256k1-recover? hash signature) false)) (ok signer))
-)
-
-(define-read-only (verify-signed-structured-data (structured-data-hash (buff 32)) (signature (buff 65)) (signer principal))
-	(verify-signature (sha256 (concat structured-data-header structured-data-hash)) signature signer)
-)
-
-(define-read-only (verify-signed-tuple
-    (message-data (tuple 
-                    (attestation (string-ascii 100)) 
-                    (proposal principal)
-                    (timestamp uint) 
-                    (vote bool)
-                    (voter principal)
-                    (voting_power uint))) 
-    (signature (buff 65)) 
-    (signer principal))
-  (let
-    (
-      ;; Compute the structured data hash
-      	(structured-data-hash (sha256 (unwrap! (to-consensus-buff? message-data) err-unauthorised)))
-    )
-    ;; Verify the signature using the computed hash
-    (ok (verify-signed-structured-data structured-data-hash signature signer))
-  )
 )
 
 ;; Conclusion

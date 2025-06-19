@@ -1,0 +1,122 @@
+[project]
+name = "bitcoin-dao"
+description = 'Bitcoin Layer 2 DAO fork of Executor DAO'
+authors = ['mijoco']
+telemetry = false
+cache_dir = '.cache'
+clarity_version = 3
+epoch = "3.0"
+
+[project.cache_location]
+path = ".cache"
+
+#[repl.analysis]
+#passes = ["check_checker"]
+#strict = false
+#trusted_sender = true
+#trusted_caller = true
+#callee_filter = true
+
+[contracts.extension-trait]
+path = "contracts/traits/extension-trait.clar"
+
+[contracts.proposal-trait]
+path = "contracts/traits/proposal-trait.clar"
+
+[contracts.ownable-trait]
+path = "contracts/traits/ownable-trait.clar"
+
+[contracts.sip010-ft-trait]
+path = "contracts/traits/sip010-ft-trait.clar"
+
+[contracts.sip009-nft-trait]
+path = "contracts/traits/sip009-nft-trait.clar"
+
+[contracts.voting-trait]
+path = "contracts/traits/voting-trait.clar"
+
+[contracts.governance-token-trait]
+path = "contracts/traits/governance-token-trait.clar"
+
+[contracts.payment-gateway-trait]
+path = "contracts/traits/payment-gateway-trait.clar"
+
+[contracts.resource-provider-trait]
+path = "contracts/traits/resource-provider-trait.clar"
+
+[contracts.bitcoin-dao]
+path = "contracts/bitcoin-dao.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde000-governance-token]
+path = "contracts/extensions/bde000-governance-token.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde001-proposal-voting]
+path = "contracts/extensions/bde001-proposal-voting.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde002-proposal-submission]
+path = "contracts/extensions/bde002-proposal-submission.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde003-core-proposals]
+path = "contracts/extensions/bde003-core-proposals.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde004-core-execute]
+path = "contracts/extensions/bde004-core-execute.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde006-treasury]
+path = "contracts/extensions/bde006-treasury.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde020-resource-manager]
+path = "contracts/extensions/bde020-resource-manager.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde021-opinion-polling]
+path = "contracts/extensions/bde021-opinion-polling.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bde022-poll-gating]
+path = "contracts/extensions/bde022-poll-gating.clar"
+clarity_version = 3
+epoch = "3.0"
+
+
+[contracts.bdp000-bootstrap]
+path = "contracts/proposals/testnet/bdp000-bootstrap.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bdp000-executive-team-sunset-height]
+path = "contracts/proposals/testnet/bdp000-executive-team-sunset-height.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bdp000-core-team-sunset-height]
+path = "contracts/proposals/testnet/bdp000-core-team-sunset-height.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bdp000-add-resource]
+path = "contracts/proposals/testnet/resources/bdp000-add-resource.clar"
+clarity_version = 3
+epoch = "3.0"
+
+[contracts.bdp021-opinion-polls]
+path = "contracts/proposals/testnet/bdp021-opinion-polls.clar"
+clarity_version = 3
+epoch = "3.0"
+

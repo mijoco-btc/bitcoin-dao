@@ -16,7 +16,6 @@
 
 (impl-trait .extension-trait.extension-trait)
 (use-trait proposal-trait .proposal-trait.proposal-trait)
-(use-trait voting-trait .voting-trait.voting-trait)
 
 (define-constant err-unauthorised (err u3100))
 (define-constant err-not-governance-token (err u3101))
@@ -49,8 +48,8 @@
 
 ;; Proposals
 
-(define-private (submit-proposal-for-vote (voting-contract <voting-trait>) (proposal <proposal-trait>) (start-height-stacks uint) (start-burn-height uint) (duration uint) (custom-majority (optional uint)))
-	(contract-call? voting-contract add-proposal
+(define-private (submit-proposal-for-vote (proposal <proposal-trait>) (start-height-stacks uint) (start-burn-height uint) (duration uint) (custom-majority (optional uint)))
+	(contract-call? .bde001-proposal-voting add-proposal
 		proposal
 		{
 			start-height-stacks: start-height-stacks,
@@ -112,7 +111,7 @@
 
 ;; Proposals
 
-(define-public (fund (voting-contract <voting-trait>) (proposal <proposal-trait>) (start-delay uint) (duration uint) (amount uint) (custom-majority (optional uint)))
+(define-public (fund (proposal <proposal-trait>) (start-delay uint) (duration uint) (amount uint) (custom-majority (optional uint)))
 	(let
 		(
 			(proposal-principal (contract-of proposal))
@@ -130,7 +129,7 @@
 		(asserts! (>= start-delay (try! (get-parameter "minimum-proposal-start-delay"))) err-proposal-minimum-start-delay)
 		(asserts! (>= duration (try! (get-parameter "minimum-proposal-duration"))) err-proposal-minimum-duration)
 		(map-set funded-proposals proposal-principal true)
-		(submit-proposal-for-vote voting-contract proposal stacks-block-height (+ burn-block-height start-delay) duration custom-majority)
+		(submit-proposal-for-vote proposal stacks-block-height (+ burn-block-height start-delay) duration custom-majority)
 	)
 )
 

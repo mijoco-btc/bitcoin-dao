@@ -13,7 +13,6 @@
 
 (impl-trait .extension-trait.extension-trait)
 (use-trait proposal-trait .proposal-trait.proposal-trait)
-(use-trait voting-trait .voting-trait.voting-trait)
 
 (define-data-var core-team-sunset-height uint u0) ;; does not expire by default - can be changed by proposal
 
@@ -55,13 +54,13 @@
 	(default-to false (map-get? core-team who))
 )
 
-(define-public (core-propose (voting-contract <voting-trait>) (proposal <proposal-trait>) (start-burn-height uint) (duration uint) (custom-majority (optional uint)))
+(define-public (core-propose (proposal <proposal-trait>) (start-burn-height uint) (duration uint) (custom-majority (optional uint)))
 	(begin
 		(asserts! (is-core-team-member tx-sender) err-not-core-team-member)
 		(asserts! (or (is-eq (var-get core-team-sunset-height) u0) (< burn-block-height (var-get core-team-sunset-height))) err-sunset-height-reached)
 		(asserts! (>= start-burn-height (+ burn-block-height u2)) err-proposal-minimum-start-delay)
 		(asserts! (>= (+ start-burn-height duration) (+ burn-block-height u72)) err-proposal-minimum-duration)
-		(contract-call? voting-contract add-proposal proposal
+		(contract-call? .bde001-proposal-voting add-proposal proposal
 			{
 				start-height-stacks: stacks-block-height,
 				start-burn-height: start-burn-height,
